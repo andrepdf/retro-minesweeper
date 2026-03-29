@@ -1,6 +1,6 @@
 # Retro Minesweeper
-A minesweeper clone built with HTML, CSS and JavaScript.
-I wanted to learn at least the basics of Web Development, so this was is "learning the basics" project.
+A minesweeper clone built with HTML, CSS and JavaScript.<br>
+I wanted to learn at least the basics of Web Development, so this was is "learning the basics" project.<br>
 The looks were inspired by old monochromatic computer terminals.
 ### This minesweeper version includes:
 - Keyboard navigation.
