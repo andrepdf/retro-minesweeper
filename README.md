@@ -8,10 +8,10 @@ The visuals were inspired by old monochromatic computer terminals.
 - Chording: Digging visible cells reveals adjacent cells if the current number of flags are placed around it.
 - Working game loop.
 ### Keybinds:
-- [ARROWS]: Move.
-- [D]: Dig current cell.
-- [F]: Place flag.
-- [R]: Reset.
+- (ARROWS): Move.
+- (D): Dig current cell.
+- (F): Place flag.
+- (R): Reset.
 ### To-do:
 - Win animations.
 - Timer and flag counter.
