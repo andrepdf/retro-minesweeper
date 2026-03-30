@@ -1,25 +1,31 @@
 const EMPTY = '<span style="color:#007700">~</span>';
-const FLAG = '<span style="color:#00ff00; font-weight:bold">X</span>';
-const BOMB = '<span style="color:#ff0000; font-weight:bold; text-shadow: 0 0 4px #ff0000;">#</span>'
-const LB = '<span style="color:#00ff00">[</span>';
-const RB = '<span style="color:#00ff00">]</span>';
+const FLAG = '<span style="color:#77ff77; font-weight:bold; text-shadow: 0 0 4px #77ff77;">X</span>';
+const BOMB = '<span style="color:#ff3333; font-weight:bold; text-shadow: 0 0 4px #ff3333;">O</span>'
+const LB = '<span style="color:#77ff77">[</span>';
+const RB = '<span style="color:#77ff77">]</span>';
 
 const game = document.getElementById("game");
 
 // Board Data
-const rows = 10;
-const cols = 10;
+const rows = 9;
+const cols = 9;
 const bombs = 20;
+const safeCells = rows * cols - bombs;
 let board;
 
 // Player Data
 let playerX = 0;
 let playerY = 0;
 let flags = bombs;
+let isGame = true;
 let isFirstPlay = true;
+let isWon = false;
 let isOver = false;
 
 function createEmptyBoard() {
+    const fontSize = rows > 13 ? (230 / rows) + "px" : "18px";
+    game.style.setProperty('--terminal-font-size', fontSize);
+
     board = [];
     for (let y = 0; y < rows; y++) {
         let row = [];
@@ -57,6 +63,16 @@ function updateNumbers() {
     }
 }
 
+function countVisibleCells() {
+    let count = 0;
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (board[y][x].visible) count++;
+        }
+    }
+    return count;
+}
+
 function countAdjacent(x, y, condition) {
     let count = 0;
     for (let dy = -1; dy <= 1; dy++) {
@@ -71,7 +87,18 @@ function countAdjacent(x, y, condition) {
     return count;
 }
 
+function gameWon() {
+    isGame = false;
+    // TODO
+}
+
 function gameOver() {
+    isGame = false;
+    game.classList.add("shake");
+    game.addEventListener("animationend", () => {
+        game.classList.remove("shake");
+    }, { once: true });
+
     let delay = 200;
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
@@ -81,7 +108,6 @@ function gameOver() {
             delay += 200;
         }
     }
-    // TODO: shake screen (explosion)
 }
 
 function renderBoard() {
@@ -114,7 +140,7 @@ function digCell(x, y) {
     let cell = board[y][x];
     if (cell.flagged) return false;
     if (cell.visible) {
-        if (cell.value != 0 && cell.value == countAdjacent(x, y, c => c.flagged))
+        if (cell.value != 0 && cell.value <= countAdjacent(x, y, c => c.flagged))
             digAdjacent(x, y);
         return true;
     }
@@ -123,6 +149,7 @@ function digCell(x, y) {
         isOver = true;
         return true;
     }
+    isWon = countVisibleCells() === safeCells;
     if (cell.value != 0) return true;
     digAdjacent(x, y);
     return true;
@@ -161,11 +188,14 @@ function handleInput(input) {
     else if (input.toUpperCase() === "R") {
         createEmptyBoard();
         isFirstPlay = true;
+        isGame = true;
+        isWon = false;
         isOver = false;
     }
-    else if (isOver)
+    else if (!isGame)
         return false;
     else if (isFirstPlay) {
+        if (input.toUpperCase() != 'D') return false;
         placeBombs(playerX, playerY);
         updateNumbers();
         digCell(playerX, playerY);
@@ -186,7 +216,10 @@ renderBoard();
 
 game.addEventListener("keydown", (e) => {
     if (handleInput(e.key)) {
-        if (isOver) gameOver();
+        if (isGame) {
+            if (isWon) gameWon();
+            else if (isOver) gameOver();
+        }
         renderBoard();
     }
 });

@@ -1,48 +1,58 @@
 :root {
-    --bg-color: #030303;
-    --crt-bg: #070b07;
+    --body-bg: #000000;
+    --terminal-bg: #070b07;
     --green: #00bb00;
     --dark-green: #005500;
+
+    --terminal-font-size: 18px;
 }
 
 body {
-    background-color: var(--bg-color);
+    /* Background */
+    background-color: var(--body-bg);
 
+    /* Positioning */
     display: flex;
     justify-content: center;
     align-items: center;
-
-    margin: 0;
     height: 100vh;
+    margin: 0;
+
+    /* Unwanted Interactivity */
     overflow: hidden;
 }
 
 #game {
-    background-color: var(--crt-bg);
+    /* Border and Background */
+    background-color: var(--terminal-bg);
     border: 2px solid var(--dark-green);
-    box-shadow: 0 0 20px var(--dark-green),
-                inset 0 0 10px var(--dark-green);
+    border-radius: 25px;
+    padding: 25px;
+    box-shadow: 0 0 200px var(--dark-green), inset 0 0 10px var(--dark-green);
 
-    padding: 20px 20px;
-    border-radius: 6px;
-
-    outline: none;
-    user-select: none;
-
-    color: var(--green) ;
+    /* Text Format */
+    color: var(--green);
     text-shadow: 0 0 4px var(--green);
     font-family: 'Courier New', Courier, monospace;
-    font-size: 18px;
+    font-size: var(--terminal-font-size);
     letter-spacing: 1px;
     line-height: 2;
     text-align: center;
+
+    /* Unwanted Interactivity */
+    outline: none;
+    user-select: none;
 }
 
-#instructions {
-    color: var(--green);
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    letter-spacing: 1px;
-    line-height: 2;
-    text-align: center;
+.shake {
+    animation: shake-animation 0.4s ease-in-out;
+}
+
+@keyframes shake-animation {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
 }
