@@ -7,9 +7,9 @@ const RB = '<span style="color:#77ff77">]</span>';
 const game = document.getElementById("game");
 
 // Board Data
-const rows = 9;
-const cols = 9;
-const bombs = 20;
+const rows = 16;
+const cols = 16;
+const bombs = 40;
 const safeCells = rows * cols - bombs;
 let board;
 
