@@ -4,25 +4,38 @@
     --green: #00bb00;
     --dark-green: #005500;
 
-    --terminal-font-size: 18px;
+    --terminal-width: 500px;
+    --terminal-height: 500px;
 }
 
 body {
     /* Background */
     background-color: var(--body-bg);
 
-    /* Positioning */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-
     /* Unwanted Interactivity */
     overflow: hidden;
 }
 
+#terminal {
+    /* Center */
+    display: flex;
+    justify-content: center;
+}
+
 #game {
+    --font-size: min(26px, calc(var(--terminal-height) / (var(--grid-rows) * 2)));
+    --width: calc(var(--grid-cols) * (var(--font-size) * 0.5) * 4);
+    
+    /* Dimensions */
+    height: var(--terminal-height);
+    width: max(var(--terminal-width), var(--width));
+    
+    /* Center */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+
     /* Border and Background */
     background-color: var(--terminal-bg);
     border: 2px solid var(--dark-green);
@@ -33,11 +46,12 @@ body {
     /* Text Format */
     color: var(--green);
     text-shadow: 0 0 4px var(--green);
-    font-family: 'Courier New', Courier, monospace;
-    font-size: var(--terminal-font-size);
+    font-size: var(--font-size);
+    font-family: monospace;
     letter-spacing: 1px;
     line-height: 2;
     text-align: center;
+    white-space: pre;
 
     /* Unwanted Interactivity */
     outline: none;
