@@ -149,7 +149,7 @@ export class Game {
 
         const sizeByWidth = termWidth / charsWidth;
         const sizeByHeight = termHeight / charsHeight;
-        const finalSize = 0.8 * Math.min(sizeByWidth, sizeByHeight);
+        const finalSize = 0.85 * Math.min(sizeByWidth, sizeByHeight);
 
         this.#display.style.fontSize = `${finalSize}vmin`
         this.#display.style.lineHeight = `${finalSize * 1.6}vmin`
