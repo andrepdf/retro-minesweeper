@@ -8,6 +8,9 @@ export class Game {
     #cursorX;
     #cursorY;
     #menu; // True: return to menu; False: stay on game
+    #startTime;
+    #timerInterval;
+    #finalTime;
 
     constructor(display) {
         this.#display = display;
@@ -32,6 +35,7 @@ export class Game {
         this.#cursorX = 0;
         this.#cursorY = 0;
         this.#adjustFontSize(rows, columns);
+        this.#stopTimer();
     }
 
     /**
@@ -50,22 +54,28 @@ export class Game {
         }
         key = key.toUpperCase();
         if (key === 'E') {
+            this.#stopTimer();
             this.#menu = true;
             this.#stopAnimations();
         } else if (key === 'R') {
+            this.#stopTimer();
             this.#board.init();
             this.#stopAnimations();
         } else if (this.#board.isOver()) {
             return;
         } else if (this.#board.isReady()) {
-            if (key === 'D')
+            if (key === 'D') {
                 this.#board.plantBombs(this.#cursorX, this.#cursorY, CONFIG.SAFE_RADIUS);
+                this.#board.digCell(this.#cursorX, this.#cursorY);
+                this.#startTimer();
+            }
         } else if (key === 'D') {
             this.#board.digCell(this.#cursorX, this.#cursorY);
-            if (this.#board.isLost()) {
-                this.#gameOverL();
-            } else if (this.#board.isWin()) {
-                this.#gameOverW();
+            if (this.#board.isOver()) {
+                this.#stopTimer();
+                if (this.#board.isLost())
+                    this.#gameOverL();
+                else this.#gameOverW();
             }
         } else if (key === 'F') {
             this.#board.toggleFlag(this.#cursorX, this.#cursorY);
@@ -76,7 +86,7 @@ export class Game {
      * Renders the current board and the cursor position.
      */
     render() {
-        let out = "";
+        let out = this.#drawHeader();
         for (let y = 0; y < this.#board.rows; y++) {
             for (let x = 0; x < this.#board.columns; x++) {
                 const cell = this.#board.getCell(x, y);
@@ -90,6 +100,52 @@ export class Game {
             out += "\n";
         }
         this.#display.innerHTML = out;
+    }
+
+    /**
+     * Resets current timer.
+     * Starts a new 1 second interval timer.
+     * @private
+     */
+    #startTimer() {
+        this.#stopTimer();
+        this.#startTime = Date.now();
+        this.#timerInterval = setInterval(() => {
+            this.render();
+        }, 1000)
+    }
+
+    /**
+     * Stops the timer and saves the final time.
+     * @private
+     */
+    #stopTimer() {
+        this.#finalTime = Date.now() - this.#startTime;
+        clearInterval(this.#timerInterval);
+        this.#timerInterval = null;
+    }
+
+    /**
+     * Builds a string representing the header of
+     * the game. It includes a flag count and a timer.
+     * Example: "  999  |  00:00"
+     * @private
+     * @returns {string} A string representing the header.
+     */
+    #drawHeader() {
+        let header = "";
+
+        const flags = String(this.#board.flags).padStart(6);
+        let seconds = 0;
+        if (this.#board.isPlaying())
+            seconds = Math.floor((Date.now() - this.#startTime) / 1000);
+        else if (this.#board.isOver())
+            seconds = Math.floor(this.#finalTime / 1000);
+        const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+        seconds = String(Math.floor(seconds % 60)).padStart(2, '0');
+        header += `<span class="game-header">${flags}  |  ${minutes}:${seconds} </span>`;
+
+        return header;
     }
 
     /**
@@ -110,7 +166,7 @@ export class Game {
                     cell.reveal();
                     this.render(this.#display);
                 }, delay))
-                delay += 300;
+                delay += 200;
             }
         }
     }

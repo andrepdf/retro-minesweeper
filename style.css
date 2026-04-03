@@ -59,6 +59,12 @@ body {
     transform: translate3d(0, 0, 0);
 }
 
+.game-header {
+    display: block;
+    margin-bottom: calc(4vh - var(--font-size));
+    font-size: 4vh;
+}
+
 .shake {
     animation: shake-animation 0.4s ease-in-out;
 }

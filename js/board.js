@@ -65,7 +65,7 @@ export class Board {
 
     /**
      * Randomly plant bombs on the grid.
-     * Calculates cell values, digs safe cell and sets state to "Playing".
+     * Calculates cell values and sets state to "Playing".
      * @param {number} safeX - X coordinate of the center cell.
      * @param {number} safeY - Y coordinate of the center cell.
      * @param {number} safeRadius - Distance from the center to keep safe.
@@ -82,7 +82,6 @@ export class Board {
             placed++;
         }
         this.#updateNumbers();
-        this.digCell(safeX, safeY);
         this.#state = 'P';
     }
 

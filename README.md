@@ -7,7 +7,7 @@ The visuals were inspired by old monochromatic computer terminals.<br>
 - Keyboard navigation.
 - Safe start: Bombs are only placed after the first play.
 - Chording: Digging visible cells reveals adjacent cells if the current number of flags are placed around it.
-- Working game loop.
+- Flag count and timer display.
 ### Keybinds:
 - (ARROWS): Move.
 - (D): Dig current cell.
@@ -15,6 +15,5 @@ The visuals were inspired by old monochromatic computer terminals.<br>
 - (R): Reset.
 - (E): Exit to menu.
 ### To-do:
-- Timer and flag counter display.
 - Sound effects and music(?).
 - "No guessing" mode (requires a solver).
