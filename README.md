@@ -1,6 +1,7 @@
 # Retro Minesweeper
 A minesweeper clone built with HTML, CSS and JavaScript.<br>
-The visuals were inspired by old monochromatic computer terminals.
+The visuals were inspired by old monochromatic computer terminals.<br>
+[Play here.](https://andrepdf.github.io/retro-minesweeper/)
 ### This minesweeper version includes:
 - Menu for customizing board dimensions and bomb density.
 - Keyboard navigation.
@@ -14,7 +15,6 @@ The visuals were inspired by old monochromatic computer terminals.
 - (R): Reset.
 - (E): Exit to menu.
 ### To-do:
-- Game over animations.
 - Timer and flag counter display.
 - Sound effects and music(?).
 - "No guessing" mode (requires a solver).

@@ -1,132 +1,193 @@
+import { Cell } from "./cell.js"
+
 export class Board {
     #rows;
-    #cols;
-    #bombTotal;
+    #columns;
+    #bombs;
     #grid;
-    #state;
+    #unrevealedCells;
     #flags;
-    #unrevealedCells
+    #state; // 'R': ready ; 'P': playing ; 'W': win ; 'L': lost
 
-    constructor(rows, cols, bombTotal) {
-        this.config(rows, cols, bombTotal);
+    constructor(rows, columns, bombs) {
+        this.config(rows, columns, bombs);
     }
 
-    get rows() { return this.#rows }
-    get cols() { return this.#cols }
-    get state() { return this.#state; }
+    // Getters
+    get rows() { return this.#rows; }
+    get columns() { return this.#columns; }
+    get bombs() { return this.#bombs; }
+    get flags() { return this.#flags; }
     getCell(x, y) { return this.#grid[y][x]; }
 
-    config(rows, cols, bombTotal) {
-        this.#rows = rows;
-        this.#cols = cols;
-        this.#bombTotal = bombTotal;
+    // Checks
+    isReady() { return this.#state === 'R'; }
+    isPlaying() { return this.#state === 'P'; }
+    isWin() { return this.#state === 'W'; }
+    isLost() { return this.#state === 'L'; }
+    isOver() { return this.#state === 'W' || this.#state === 'L'; }
+    isCell(x, y) { return x >= 0 && x < this.#columns && y >= 0 && y < this.#rows; }
 
+    // Setters
+    emptyGrid() { this.#grid = []; }
+
+    /**
+     * Updates board dimensions and bomb total.
+     * Initializes board with new settings.
+     * @param {number} rows - Number of rows.
+     * @param {number} columns - Number of columns.
+     * @param {number} bombs - Number of bombs.
+     */
+    config(rows, columns, bombs) {
+        this.#rows = rows;
+        this.#columns = columns;
+        this.#bombs = bombs;
         this.init();
     }
 
+    /**
+     * Initializes board with current settings.
+     * Resets flag count and sets state to "Ready".
+     */
     init() {
-        this.#grid = [];
+        this.emptyGrid();
         for (let y = 0; y < this.#rows; y++) {
             let row = [];
-            for (let x = 0; x < this.#cols; x++) {
-                row.push({
-                    value: 0, // 0-8 for numbers; 9 for bomb
-                    state: 'U' // Unrevealed; Revealed; Flagged
-                });
+            for (let x = 0; x < this.#columns; x++) {
+                row.push(new Cell());
             }
             this.#grid.push(row);
         }
-        this.#state = 'R'; // Ready; Playing; Won; Lost
-        this.#flags = this.#bombTotal;
-        this.#unrevealedCells = (this.#rows * this.#cols) - this.#bombTotal;
+        this.#unrevealedCells = this.#rows * this.#columns - this.#bombs;
+        this.#flags = this.#bombs;
+        this.#state = 'R';
     }
 
-    placeBombs(safeX, safeY) {
+    /**
+     * Randomly plant bombs on the grid.
+     * Calculates cell values, digs safe cell and sets state to "Playing".
+     * @param {number} safeX - X coordinate of the center cell.
+     * @param {number} safeY - Y coordinate of the center cell.
+     * @param {number} safeRadius - Distance from the center to keep safe.
+     */
+    plantBombs(safeX, safeY, safeRadius) {
         let placed = 0;
-        while (placed < this.#bombTotal) {
-            const x = Math.floor(Math.random() * this.#cols);
+        while (placed < this.#bombs) {
+            const x = Math.floor(Math.random() * this.#columns);
             const y = Math.floor(Math.random() * this.#rows);
-
-            let cell = this.#grid[y][x];
-            if (cell.value === 9) continue;
-            if (Math.abs(x - safeX) < 2 && Math.abs(y - safeY) < 2) continue;
-
-            cell.value = 9;
+            let cell = this.getCell(x, y);
+            if (cell.isBomb()) continue;
+            if (Math.abs(x - safeX) <= safeRadius && Math.abs(y - safeY) <= safeRadius) continue;
+            cell.plantBomb();
             placed++;
         }
         this.#updateNumbers();
+        this.digCell(safeX, safeY);
         this.#state = 'P';
     }
 
+    /**
+     * Attempts to dig a cell and handles game state logic.
+     * If cell has no adjacent bombs, dig adjacent cells.
+     * @param {number} x - X coordinate of the cell.
+     * @param {number} y - Y coordinate of the cell.
+     * @returns {boolean} True if cell was dug; False otherwise.
+     */
     digCell(x, y) {
-        let cell = this.#grid[y][x];
-        if (cell.state === 'F') return false;
-        if (cell.state === 'R') {
-            if (this.#countAdjacent(x, y, c => c.state === 'F') < cell.value)
-                return false;
-            this.#digAdjacent(x, y);
-            return true;
-        }
-        cell.state = 'R';
-        if (cell.value === 9) {
-            this.#state = 'L';
-            return true;
-        }
+        let cell = this.getCell(x, y);
+        if (cell.isFlagged()) return false;
+        if (cell.isRevealed()) return this.#chord(x, y);
+        cell.reveal();
         this.#unrevealedCells--;
-        if (this.#unrevealedCells === 0) this.#state = 'W';
-        if (cell.value != 0) return true;
-        this.#digAdjacent(x, y);
+        if (cell.isEmpty()) this.#digAdjacent(x, y);
+        else if (cell.isBomb()) this.#state = 'L';
+        else if (this.isPlaying() && this.#unrevealedCells === 0)
+            this.#state = 'W';
         return true;
     }
 
-    placeFlag(x, y) {
-        let cell = this.#grid[y][x];
-        if (cell.state === 'R') return false;
-        if (cell.state === 'F') {
-            cell.state = 'U';
-            this.#flags++;
-        } else {
-            cell.state = 'F';
-            this.#flags--;
-        }
+    /**
+     * Attempts to place or remove flag from a cell.
+     * Updates flag count.
+     * @param {number} x - X coordinate of the cell.
+     * @param {number} y - Y coordinate of the cell.
+     * @returns {boolean} True if a flag was placed or removed; False otherwise.
+     */
+    toggleFlag(x, y) {
+        let cell = this.getCell(x, y);
+        if (cell.isRevealed()) return false;
+        cell.toggleFlag();
+        this.#flags += (cell.isFlagged()) ? -1 : 1;
         return true;
     }
 
-    #digAdjacent(x, y) {
-        for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-                if (dx === 0 && dy === 0) continue;
-                const ix = x + dx;
-                const iy = y + dy;
-                if (ix < 0 || iy < 0 || ix >= this.#cols || iy >= this.#rows) continue;
-                if (this.#grid[iy][ix].state === 'R') continue;
-                this.digCell(ix, iy);
-            }
-        }
-    }
-
+    /**
+     * Updates the values of every cell of the grid
+     * based on the number of adjacent bombs.
+     * @private
+     */
     #updateNumbers() {
         for (let y = 0; y < this.#rows; y++) {
-            for (let x = 0; x < this.#cols; x++) {
-                let cell = this.#grid[y][x];
-                if (cell.value === 9) continue;
-                cell.value = this.#countAdjacent(x, y, c => c.value === 9);
+            for (let x = 0; x < this.#columns; x++) {
+                let cell = this.getCell(x, y);
+                if (cell.isBomb()) continue;
+                cell.value = this.#countAdjacent(x, y, (c => c.isBomb()));
             }
         }
     }
 
-    #countAdjacent(x, y, filter) {
+    /**
+     * Counts how many adjacent cells satisfy a given condition.
+     * @private
+     * @param {number} x - X coordinate of the center cell.
+     * @param {number} y - Y coordinate of the center cell.
+     * @param {Function} condition - The callback function used as a condition.
+     * @returns {number} The number of adjacent cells that satisfy the condition.
+     */
+    #countAdjacent(x, y, condition) {
         let count = 0;
         for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
                 if (dx === 0 && dy === 0) continue;
                 const ix = x + dx;
                 const iy = y + dy;
-                if (ix < 0 || iy < 0 || ix >= this.#cols || iy >= this.#rows) continue;
-                if (!filter(this.#grid[iy][ix])) continue;
-                count++;
+                if (!this.isCell(ix, iy)) continue;
+                if (condition(this.getCell(ix, iy))) count++;
             }
         }
         return count;
+    }
+
+    /**
+     * Calls digCell() for all adjacent cells.
+     * @private
+     * @param {number} x - X coordinate of the center cell.
+     * @param {number} y - Y coordinate of the center cell.
+     */
+    #digAdjacent(x, y) {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                const ix = x + dx;
+                const iy = y + dy;
+                if (!this.isCell(ix, iy)) continue;
+                if (this.getCell(ix, iy).isRevealed()) continue;
+                this.digCell(ix, iy);
+            }
+        }
+    }
+
+    /**
+     * Attempts to chord if enough adjacent flags are placed.
+     * @private
+     * @param {number} x - X coordinate of the center cell.
+     * @param {number} y - Y coordinate of the center cell.
+     * @returns {boolean} True if there aren't enough adjacent flags placed; False otherwise.
+     */
+    #chord(x, y) {
+        let cell = this.getCell(x, y);
+        if (cell.value > this.#countAdjacent(x, y, (c => c.isFlagged()))) return false;
+        this.#digAdjacent(x, y);
+        return true;
     }
 }

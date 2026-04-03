@@ -1,0 +1,73 @@
+:root {
+    --body-bg: #000000;
+    --term-bg: #070b07;
+    --dark-green: #003300;
+    --green: #005500;
+    --light-green: #007700;
+    --phosphor-green: #07ff07;
+    --red: #ff0000;
+
+    --term-width: 70vw;
+    --term-height: 80vh;
+
+    --font-size: 3vh;
+    --line-height: 5vh;
+}
+
+body {
+    /* Background */
+    background-color: var(--body-bg);
+
+    /* Unwanted Interactivity */
+    user-select: none;
+    overflow: hidden;
+}
+
+#terminal {
+    /* Border and Background */
+    background-color: var(--term-bg);
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--dark-green);
+    border-radius: 25px;
+    box-shadow: 0 0 100px var(--green), inset 0 0 50px var(--dark-green);
+
+    /* Position */
+    display: flex;
+    margin-top: 10vh;
+    margin-inline: auto;
+
+    /* Dimensions */
+    width: var(--term-width);
+    height: var(--term-height);
+}
+
+#display {
+    /* Position */
+    display: block;
+    margin: auto;
+
+    /* Text Format */
+    color: var(--light-green);
+    text-shadow: 0 0 5px var(--light-green);
+    font-size: var(--font-size);
+    font-family: 'Courier New', Courier, monospace;
+    line-height: var(--line-height);
+    text-align: center;
+
+    /* Smoother Animations */
+    transform: translate3d(0, 0, 0);
+}
+
+.shake {
+    animation: shake-animation 0.4s ease-in-out;
+}
+
+@keyframes shake-animation {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}

@@ -1,130 +1,157 @@
-import { Board } from "./board.js";
-
-const MIN_ROWS = 4;
-const MAX_ROWS = 20;
-const MIN_COLS = 4;
-const MAX_COLS = 40;
-const MIN_DENSITY = 0.05;
-const MAX_DENSITY = 0.40;
+import { Board } from "./board.js"
+import { CONFIG, SYMBOL } from "./constants.js"
 
 export class Game {
-    #state;
-    #menuIndex;
-    #difficultyIndex;
-    #difficulties = [
-            { name: "Easy", rows: 9, cols: 9, density: 0.10 },
-            { name: "Normal", rows: 16, cols: 16, density: 0.15 },
-            { name: "Hard", rows: 16, cols: 32, density: 0.20 }
-        ]
-    #rows;
-    #cols;
-    #density;
+    #display;
+    #timeouts;
     #board;
-    #player;
+    #cursorX;
+    #cursorY;
+    #menu; // True: return to menu; False: stay on game
 
-    constructor() {
-        this.#state = 'M';
-        this.#menuIndex = 0;
-        this.#difficultyIndex = 0;
-        this.#rows = 9;
-        this.#cols = 9;
-        this.#density = 0.10;
+    constructor(display) {
+        this.#display = display;
+        this.#timeouts = [];
+        this.#menu = false;
     }
 
-    get state() { return this.#state; }
-    get menuIndex() { return this.#menuIndex; }
-    get difficultyIndex() { return this.#difficultyIndex; }
-    get rows() { return this.#rows; }
-    get cols() { return this.#cols; }
-    get density() { return this.#density; }
-    get board() { return this.#board; }
-    get player() { return this.#player; }
+    // Checks
+    isMenu() { return this.#menu; }
 
-    init() {
-        const bombTotal = Math.max(4, Math.floor(this.#rows * this.#cols * this.#density));
-        this.#board = new Board(this.#rows, this.#cols, bombTotal);
-        this.#player = { x: 0, y: 0 };
-        this.#state = 'G';
+    /**
+     * Initializes board with current settings.
+     * Resets cursor coordinates.
+     * @param {number} rows - Number of rows.
+     * @param {number} columns - Number of columns.
+     * @param {number} density - Bomb density.
+     */
+    init(rows, columns, density) {
+        this.#menu = false;
+        const bombs = Math.floor(rows * columns * density / 100);
+        this.#board = new Board(rows, columns, bombs);
+        this.#cursorX = 0;
+        this.#cursorY = 0;
+        this.#adjustFontSize(rows, columns);
     }
 
+    /**
+     * Handles keyboard input for game logic.
+     * @param {string} key - Keyboard input. 
+     */
     handleInput(key) {
-        if (this.#state === 'M')
-            this.#handleMenuInput(key);
-        else
-            this.#handleGameInput(key);
-    }
-
-    #handleMenuInput(key) {
-        if (key === "ArrowUp")
-            this.#menuIndex = Math.max(0, this.#menuIndex - 1);
-        if (key === "ArrowDown")
-            this.#menuIndex = Math.min(4, this.#menuIndex + 1);
-
-        if (this.#menuIndex === 0) {
-            if (key === "ArrowLeft")
-                this.#difficultyIndex = Math.max(0, this.#difficultyIndex - 1);
-            if (key === "ArrowRight")
-                this.#difficultyIndex = Math.min(3, this.#difficultyIndex + 1);
-            if (this.#difficultyIndex != 3) {
-                this.#rows = this.#difficulties[this.#difficultyIndex].rows;
-                this.#cols = this.#difficulties[this.#difficultyIndex].cols;
-                this.#density = this.#difficulties[this.#difficultyIndex].density;
-            }
-        } else if (this.#menuIndex === 4) {
-            if (key === "Enter" || key.toUpperCase() === 'D' || key.toUpperCase() === 'F')
-                this.init();
-        } else if (this.#difficultyIndex === 3) {
-            if (this.#menuIndex === 1) {
-                if (key === "ArrowLeft")
-                    this.#rows = Math.max(MIN_ROWS, this.#rows - 1);
-                if (key === "ArrowRight")
-                    this.#rows = Math.min(MAX_ROWS, this.#rows + 1);
-            }
-            if (this.#menuIndex === 2) {
-                if (key === "ArrowLeft")
-                    this.#cols = Math.max(MIN_COLS, this.#cols - 1);
-                if (key === "ArrowRight")
-                    this.#cols = Math.min(MAX_COLS, this.#cols + 1);
-            }
-            if (this.#menuIndex === 3) {
-                if (key === "ArrowLeft")
-                    this.#density = Math.max(MIN_DENSITY, this.#density - 0.01);
-                if (key === "ArrowRight")
-                    this.#density = Math.min(MAX_DENSITY, this.#density + 0.01);
-            }
+        if (key === "ArrowUp") {
+            this.#cursorY = Math.max(0, this.#cursorY - 1);
+        } else if (key === "ArrowDown") {
+            this.#cursorY = Math.min(this.#board.rows - 1, this.#cursorY + 1);
+        } else if (key === "ArrowLeft") {
+            this.#cursorX = Math.max(0, this.#cursorX - 1);
+        } else if (key === "ArrowRight") {
+            this.#cursorX = Math.min(this.#board.columns - 1, this.#cursorX + 1);
         }
-    }
-
-    #handleGameInput(key) {
-        if (key === "ArrowUp")
-            this.#player.y = Math.max(0, this.#player.y - 1);
-        if (key === "ArrowDown")
-            this.#player.y = Math.min(this.#board.rows - 1, this.#player.y + 1);
-        if (key === "ArrowLeft")
-            this.#player.x = Math.max(0, this.#player.x - 1);
-        if (key === "ArrowRight")
-            this.#player.x = Math.min(this.#board.cols - 1, this.#player.x + 1);
-
         key = key.toUpperCase();
-
-        if (key === 'R')
-            this.#board.init();
-
         if (key === 'E') {
-            this.#state = 'M';
-            this.#menuIndex = 0;
-        }
-
-        if (this.#board.state === 'R') {
-            if (key === 'D') {
-                this.#board.placeBombs(this.#player.x, this.#player.y);
-                this.#board.digCell(this.#player.x, this.#player.y);
-            }
-        } else if (this.#board.state === 'P') {
+            this.#menu = true;
+            this.#stopAnimations();
+        } else if (key === 'R') {
+            this.#board.init();
+            this.#stopAnimations();
+        } else if (this.#board.isOver()) {
+            return;
+        } else if (this.#board.isReady()) {
             if (key === 'D')
-                this.#board.digCell(this.#player.x, this.#player.y);
-            if (key === 'F')
-                this.#board.placeFlag(this.#player.x, this.#player.y);
+                this.#board.plantBombs(this.#cursorX, this.#cursorY, CONFIG.SAFE_RADIUS);
+        } else if (key === 'D') {
+            this.#board.digCell(this.#cursorX, this.#cursorY);
+            if (this.#board.isLost()) {
+                this.#gameOverL();
+            } else if (this.#board.isWin()) {
+                this.#gameOverW();
+            }
+        } else if (key === 'F') {
+            this.#board.toggleFlag(this.#cursorX, this.#cursorY);
         }
     }
-}
+
+    /**
+     * Renders the current board and the cursor position.
+     */
+    render() {
+        let out = "";
+        for (let y = 0; y < this.#board.rows; y++) {
+            for (let x = 0; x < this.#board.columns; x++) {
+                const cell = this.#board.getCell(x, y);
+                const symbol = cell.symbol;
+                if (x === this.#cursorX && y === this.#cursorY)
+                    out += `${SYMBOL.LB}${symbol}${SYMBOL.RB}`;
+                else
+                    out += ` ${symbol} `;
+            }
+            if (y === this.#board.rows - 1) continue;
+            out += "\n";
+        }
+        this.#display.innerHTML = out;
+    }
+
+    /**
+     * Triggers the game lost animation:
+     * Shakes screen and reveals all bombs one at a time.
+     * @private
+     */
+    #gameOverL() {
+        const wrapper = this.#display.parentElement; 
+        wrapper.classList.add('shake');
+        this.#display.classList.add("shake");
+        let delay = 300;
+        for (let y = 0; y < this.#board.rows; y++) {
+            for (let x = 0; x < this.#board.columns; x++) {
+                const cell = this.#board.getCell(x, y);
+                if (!cell.isBomb() || cell.isRevealed()) continue;
+                this.#timeouts.push(setTimeout(() => {
+                    cell.reveal();
+                    this.render(this.#display);
+                }, delay))
+                delay += 300;
+            }
+        }
+    }
+
+    /**
+     * Triggers the game win animation.
+     * @private
+     */
+    #gameOverW() {
+        // TODO
+    }
+
+    /**
+     * Stops all ongoing animations.
+     * @private
+     */
+    #stopAnimations() {
+        this.#timeouts.forEach(t => clearTimeout(t));
+        this.#timeouts = [];
+        const wrapper = this.#display.parentElement; 
+        wrapper.classList.remove('shake');
+    }
+
+    /**
+     * Dynamically calculates the applies the font size
+     * based on the current board dimensions.
+     * @private
+     */
+    #adjustFontSize() {
+        const rootStyles = window.getComputedStyle(document.documentElement);
+
+        const termWidth = parseFloat(rootStyles.getPropertyValue('--term-width'));
+        const termHeight = parseFloat(rootStyles.getPropertyValue('--term-height'));
+        const charsWidth = 0.8 * this.#board.columns;
+        const charsHeight = 1.8 * this.#board.rows;
+
+        const sizeByWidth = termWidth / charsWidth;
+        const sizeByHeight = termHeight / charsHeight;
+        const finalSize = 0.8 * Math.min(sizeByWidth, sizeByHeight);
+
+        this.#display.style.fontSize = `${finalSize}vmin`
+        this.#display.style.lineHeight = `${finalSize * 1.6}vmin`
+    }
+}   
