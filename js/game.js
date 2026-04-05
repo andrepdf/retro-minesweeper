@@ -161,7 +161,7 @@ export class Game {
         for (let y = 0; y < this.#board.rows; y++) {
             for (let x = 0; x < this.#board.columns; x++) {
                 const cell = this.#board.getCell(x, y);
-                if (!cell.isBomb() || cell.isRevealed()) continue;
+                if (!cell.isBomb() || !cell.isUnrevealed()) continue;
                 this.#timeouts.push(setTimeout(() => {
                     cell.reveal();
                     this.render(this.#display);
